@@ -1,0 +1,24 @@
+Content ID list
+hammer --output csv content-view list >cvlist.csv; for x in $(cat cvlist.csv| cut -d ',' -f1 | sed -e '1d'); do echo $x; done
+
+ID, Label
+for x in $(cat cvlist.csv| cut -d ',' -f1,3 | sed -e '1d'); do echo $x; done
+
+Publish new version of a Content view:
+hammer content-view publish --id ##  (content view id from above)
+
+List Lifecycle IDs
+hammer --csv lifecycle-environment list | sort -n
+
+Promote version of Content view to Lifecycle:
+hammer content-view version promote --organization gpc --to-lifecycle-environment-id 31 --id 423
+--id == VERSION id, not content view ID:
+
+Get content view version IDs by content view version:
+ hammer --csv content-view version list --content-view-id ##   (## == content view ID)
+
+List of content view version IDs sorted newest to oldest
+ hammer --csv content-view version list --content-view-id 95 | cut -d ',' -f1|  sed -e '1d' | sort -rn
+
+Get newest content view ID (highest ID for that content view -- assumptive -- change to date compare in future code)
+ hammer --csv content-view version list --content-view-id 95 | cut -d ',' -f1|  sed -e '1d' | sort -rn | head -1
