@@ -1,0 +1,94 @@
+subscription-manager refresh && yum clean all && yum makecache && yum updateinfo --security cves >prepatch && yum updateinfo --security cves
+
+yum update-minimal --security --sec-severity=Important
+yum update-minimal --security --sec-severity=Critical
+yum updateinfo --sec-severity=Important
+yum updateinfo --sec-severity=Critical
+
+note: updates for important and critical can run in one pass:
+
+yum update-minimal --secuirty --sec-severity=Important --sec-severity=Critical
+
+---
+
+subscription-manager identity && subscription-manager refresh && subscription-manager identity | tee content-view-change.log
+
+df -h
+
+yum clean all && rm -rf /var/cache/yum && yum makecache
+
+yum updateinfo list cves | grep -i -E 'crit|impor' | sort -u -k 1| uniq | tee /root/relevant-cves-2018-07-01-pre.log
+yum updateinfo list cves | grep -i -E 'crit|impor' | sort -u -k 3| uniq | tee /root/relevant-cves-by-package-2018-07-01-pre.log
+
+oneliner:
+yum updateinfo --security --sec-severity=Important --sec-severity=Critical list cves | sort -u -k 2,3 | tee /root/relevant-cves-2018-08-16-pre.log
+
+CVE numbers ONLY:  yum updateinfo --security --sec-severity=Important --sec-severity=Critical list cves | awk '{print $1}' | sort -u -k 1 | uniq | tee /root/relevant-cves-only-2018-07-01-pre.log
+
+
+yum update-minimal --security --sec-severity=Important | tee /root/errata-install-important.log
+yum update-minimal --security --sec-severity=Critical | tee /root/errata-install-critical.log
+
+To do all in one pass:
+
+yum update-minimal --security --sec-severity=Important --sec-severity=Critical --sec-severity=Moderate | tee /root/errata-install-secpatches.log
+
+reboot
+
+yum clean all
+
+yum updateinfo list cves | grep -i -E 'crit|impor|moder' | sort -u -k 1| uniq | tee /root/relevant-cves-2018-07-01-post.log
+yum updateinfo list cves | grep -i -E 'crit|impor' | sort -u -k 3| uniq | tee /root/relevant-cves-by-package-2018-07-01-post.log
+yum updateinfo list cves | grep -i -E 'crit|impor' | awk '{print $1}' | sort -u -k 1 | uniq | tee /root/relevant-cves-only-2018-07-01-post.log
+
+
+Move a group of servers to new content view programmatically from satellite server console (as root):
+
+patch.lst contains list of hostnames to modify:
+ex:     augpcdvbbrapp01
+
+for a in `cat patch.lst`; do hammer content-host update --id `hammer content-host info --name $a | grep -i 'ID:' | awk '{print $2}'` --content-view-id 95 --organization-id 1 ; done
+
+for a in `cat patch.lst`; do hammer content-host info --id `hammer content-host info --name $a | grep -i 'ID:' | awk '{print $2}'`; done
+
+
+
+---------- as of 12/01/2018 -------------------
+
+Current procedure:
+
+Move server to new content view  (Baseline_Rhel7 or Baseline_Rhel6)
+
+# subscription-manager refresh
+# subscription-manager identity
+
+To update:
+
+# yum clean all
+# yum makecache
+
+# yum update-minimal --security --sec-severity=Moderate --sec-severity=Important --sec-severity=Critical | tee -a update-20181214.log
+
+IF you get an error about java repos, you'll need to disable the old java repos and enable the new ones in satellite.  See me and I'll walk you through it. It's a pain in the ::insert HR unsafe word here::
+
+
+---- REMOVING OLD KERNELS ----
+
+package-cleanup --oldkernels --count=1
+
+removes all but the current running kernel.
+
+
+
+-------- update with consolidted,simplified list of commands... or for those who just want a bowl of copypasta (you still need to change the date on the logs... I ain't tying your bootlaces for you too)-------
+
+Log pre-patch relevant CVEs
+
+yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee /root/relevant-cves-2018-07-01-pre.log
+yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 3| uniq | tee /root/relevant-cves-by-package-2018-07-01-pre.log
+
+Patch it!!!!!
+yum update-minimal -y --security --sec-severity=Low --sec-severity=Important --sec-severity=Critical --sec-severity=Moderate | tee /root/errata-install-secpatches.log
+
+After reboot ***AND VALIDATION OF APPLICATION*** to cleanup and remove old kernel packages (qualys alerts on old kernel packages)
+package-cleanup --oldkernels --count=1 
