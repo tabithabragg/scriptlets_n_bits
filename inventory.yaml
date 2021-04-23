@@ -1,0 +1,6 @@
+all:
+ hosts:
+  ansiblemember01:
+    ansible_host: 192.168.20.53
+  ansiblemember02:
+    ansible_host: 192.168.20.35
