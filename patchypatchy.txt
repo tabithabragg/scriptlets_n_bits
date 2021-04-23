@@ -1,0 +1,40 @@
+Template:
+for a in $(cat servers.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo SOMECOMMANDS THAT NEED ROOT;" 2>/dev/null; echo; done | tee -a log_all_that_stufff.txt
+
+
+This runs the CVE list log for pre-patch logs.
+
+for a in $(cat servers.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee relevant-cves-2019-06-15-pre.log;" 2>/dev/null; echo; done | tee -a first-run-pre-patch-logs.txt
+
+for a in $(cat done.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee relevant-cves-2019-06-15-pre.log;" 2>/dev/null; echo; done | tee -a first-run-pre-patch-logs.txt
+
+for a in $(cat outwin_check.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee relevant-cves-2019-06-15-check.log;" 2>/dev/null; echo; done | tee -a outwin-run-pre-patch-logs.txt
+
+
+This patches the servers:
+
+for a in $(cat servers.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum update-minimal -y --security --sec-severity=Low --sec-severity=Important --sec-severity=Critical --sec-severity=Moderate | tee errata-install-secpatches-2019-06-16.log" 2>/dev/null; echo; done | tee -a first-run-patch_install-logs.txt
+
+for a in $(head outwin_check.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum update-minimal -y --security --sec-severity=Low --sec-severity=Important --sec-severity=Critical --sec-severity=Moderate | tee errata-install-secpatches-2019-06-16.log" 2>/dev/null & done | tee -a first-run-patch_install-logs.txt
+
+** for manual update run on a given server only**
+yum update-minimal --security --sec-severity=Low --sec-severity=Important --sec-severity=Critical --sec-severity=Moderate | tee errata-install-secpatches-2019-06-16.log
+
+
+
+Reboot all the servers:
+
+for a in $(cat servers.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo reboot" 2>/dev/null; echo; done | tee -a first-run-reboot-logs.txt
+
+for a in $(cat done.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo reboot" 2>/dev/null; echo; done | tee -a first-run-reboot-logs.txt
+for a in $(cat done2.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo reboot" 2>/dev/null; echo; done | tee -a first-run-reboot-logs.txt
+
+for a in $(cat done.lst done2.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "hostname; uptime;" 2>/dev/null; echo; done | tee -a uptime-logs.txt
+
+
+Check for CVES.  There shouldn't be anything listed in these logs if everything patched.
+
+for a in $(cat servers.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee relevant-cves-2019-06-15-post.log;" 2>/dev/null; echo; done | tee -a first-run-post-patch-logs.txt
+
+
+for a in $(cat done.lst done2.lst); do echo $a; ssh -tt -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $a "sudo yum updateinfo list cves | grep -i -E 'low|crit|impor|moder' | sort -u -k 1| uniq | tee relevant-cves-2019-06-15-post.log;" 2>/dev/null; echo; done | tee -a first-run-post-patch-logs.txt
