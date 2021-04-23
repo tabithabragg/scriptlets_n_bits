@@ -1,0 +1,29 @@
+- name: install updates
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    - name: update the system
+      yum: name=* state=latest update_cache=yes
+
+    - name: restart after patch
+      shell: "sleep 5 && reboot"
+      async: 1
+      poll: 0
+
+    - name: 10 seconds
+      pause:
+       seconds: 10
+
+    - name: wait for sytem reboot
+      wait_for_connection:
+       connect_timeout: 20
+       sleep: 5
+       delay: 5
+       timeout: 60
+
+    - name: install epel release
+      yum:
+       name: epel-release
+       state: latest
+
